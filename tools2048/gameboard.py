@@ -5,6 +5,10 @@ from ._lib2048 import lib
 from cffi import FFI
 import numpy as np
 
+
+def get_time():
+    lib.get_time()
+
 #TODO Fix the list vs np.array in the moves
 class play2048(gym.Env):
     """
@@ -94,7 +98,7 @@ def roll_out_c(board):
     # Define C data
     ffi = FFI()
     g_board = ffi.new('uint8_t tmp[16]')
-    seed = np.random.randint(5000)
+    seed = np.random.randint(500000)
     for i in range(16):
         g_board[i] = game_board[i]
 
@@ -107,25 +111,40 @@ def roll_out_c(board):
     return np.sum(game_board)
 
 
+# def move_right_c(board):
+#     # prepare the game board
+#     game_board = board.copy()
+#     game_board[np.where(game_board > 0)] = np.log2(game_board[np.where(game_board > 0)])
+#     game_board = game_board.reshape(16,)
+    
+#     # Define C data
+#     ffi = FFI()
+#     g_board = ffi.new('uint8_t tmp[16]')
+#     for i in range(16):
+#         g_board[i] = game_board[i]
+#     g_board = lib.move_right(g_board)
+
+#     # convert back to python and calculate score
+#     game_board = [g_board[ind] for ind in range(16)]
+#     game_board = np.array(game_board).reshape(4, 4)
+#     game_board[np.where(game_board > 0)] = np.power(2, game_board[np.where(game_board > 0)])
+#     return game_board
+
 def move_right_c(board):
     # prepare the game board
-    game_board = board.copy()
-    game_board[np.where(game_board > 0)] = np.log2(game_board[np.where(game_board > 0)])
-    game_board = game_board.reshape(16,)
+    game_board = board.reshape(16,)
     
     # Define C data
     ffi = FFI()
-    g_board = ffi.new('uint8_t tmp[16]')
+    g_board = ffi.new('uint32_t tmp[16]')
     for i in range(16):
         g_board[i] = game_board[i]
-    g_board = lib.move_right(g_board)
+    g_board = lib.move_right32(g_board)
 
     # convert back to python and calculate score
     game_board = [g_board[ind] for ind in range(16)]
     game_board = np.array(game_board).reshape(4, 4)
-    game_board[np.where(game_board > 0)] = np.power(2, game_board[np.where(game_board > 0)])
     return game_board
-
 
 # Find all the valid moves
 def checkValidMoves(game_board):
@@ -144,6 +163,27 @@ def checkValidMoves(game_board):
     if not np.array_equal(np.array(game_board), np.array(up_game_board)):
         moves.append(2)
     if not np.array_equal(np.array(game_board), np.array(down_game_board)):
+        moves.append(3)
+
+    return moves
+
+# Find all the valid moves
+def checkValidMoves_new(game_board):
+    # Generate all game boards after all moves
+    left_game_board = move_left(game_board)
+    right_game_board = move_right(game_board)
+    up_game_board = move_up(game_board)
+    down_game_board = move_down(game_board)
+
+    # Store true false in an array 0 = right, 1 = left, 2 = up, 3 = down
+    moves = []
+    if not np.array_equal(game_board, left_game_board):
+        moves.append(0)
+    if not np.array_equal(game_board, right_game_board):
+        moves.append(1)
+    if not np.array_equal(game_board, up_game_board):
+        moves.append(2)
+    if not np.array_equal(game_board, down_game_board):
         moves.append(3)
 
     return moves
@@ -188,7 +228,6 @@ def genBoards(game_board):
 # -------------------------- Function for calculating down move --------------------------
 def move_down(game_board):
     # Create the 2D array to store the board
-    game_board = game_board.tolist()
     new_game_board = [[0 for x in range(4)] for x in range(4)]
 
     # Move the rows down
@@ -220,12 +259,11 @@ def move_down(game_board):
 
             row_ind_cond = row_ind_cond - 1
 
-    return np.array(new_game_board, dtype='uint16')
+    return new_game_board
 
 
 # -------------------------- Function for calculating right move --------------------------
 def move_right(game_board):
-    game_board = game_board.tolist()
 
     # Create the 2D array to store the board
     new_game_board = [[0 for x in range(4)] for x in range(4)]
@@ -259,12 +297,11 @@ def move_right(game_board):
 
             row_ind_cond = row_ind_cond - 1
 
-    return np.array(new_game_board, dtype='uint16')
+    return new_game_board
 
 
 # -------------------------- Function for calculating up move --------------------------
 def move_up(game_board):
-    game_board = game_board.tolist()
 
     # Create the 2D array to store the board
     new_game_board = [[0 for x in range(4)] for x in range(4)]
@@ -298,12 +335,11 @@ def move_up(game_board):
 
             row_ind_cond = row_ind_cond + 1
 
-    return np.array(new_game_board, dtype='uint16')
+    return new_game_board
 
 
 # -------------------------- Function for calculating left move --------------------------
 def move_left(game_board):
-    game_board = game_board.tolist()
 
     # Create the 2D array to store the board
     new_game_board = [[0 for x in range(4)] for x in range(4)]
@@ -337,4 +373,4 @@ def move_left(game_board):
 
             row_ind_cond = row_ind_cond + 1
 
-    return np.array(new_game_board, dtype='uint16')
+    return new_game_board

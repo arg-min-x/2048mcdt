@@ -2,7 +2,6 @@ import numpy as np
 import anytree as at
 from .gameboard import *
 
-
 class MoveNode(at.NodeMixin):
     def __init__(self, name, probability, game_board, parent=None, children=None):
         self.probability = probability
@@ -35,6 +34,28 @@ def roll_out(game_board):
             done = True
     return reward
 
+def roll_out_new(game_board):
+    done = False
+    reward = 0
+    while not done:
+        moves = checkValidMoves(game_board)
+        if moves:
+            move = np.random.choice(moves)
+            if move == 0:
+                game_board = move_left(game_board)
+            elif move == 1:
+                game_board = move_right(game_board)
+            elif move == 2:
+                game_board = move_up(game_board)
+            elif move == 3:
+                game_board = move_down(game_board)
+            
+            game_board = add_random_square(game_board)
+                
+        else:
+            done = True
+            reward = np.sum(game_board)
+    return reward
 
 def gen_next_level(root):
     """

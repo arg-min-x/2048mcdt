@@ -10,7 +10,7 @@ from joblib import Parallel, delayed
 def play_out_par(child):
     moves = tools2048.checkValidMoves(child.game_board)
     if moves:
-        reward = tools2048.roll_out(child.game_board)
+        reward = tools2048.roll_out_c(child.game_board)
     else:
         reward = np.nan
     return reward
@@ -28,7 +28,7 @@ def main():
     env = tools2048.play2048()
     env.game_board = game_board
 
-    n_moves = 500
+    n_moves = 2000
     done = False
     print(env.game_board)
     while not done:
@@ -46,8 +46,8 @@ def main():
             while move_num < n_moves:
                 move_num += len(root.children)
                 # Sample for each of these board states for n_moves times
-                reward = Parallel(n_jobs=2)(delayed(play_out_par)(child) for child in root.children)
-                # reward = [play_out_par(child) for child in root.children]
+                # reward = Parallel(n_jobs=2)(delayed(play_out_par)(child) for child in root.children)
+                reward = [play_out_par(child) for child in root.children]
                 # print(reward)
                 for ch_ind, child in enumerate(root.children):
                     moves = tools2048.checkValidMoves(child.game_board)
@@ -72,35 +72,26 @@ def main():
                 if 'down' in child.name:
                     down_reward.append(np.nanmean(child.reward) * child.probability)
 
-            left_reward = np.sum(left_reward)
-            right_reward = np.sum(right_reward)
-            up_reward = np.sum(up_reward)
-            down_reward = np.sum(down_reward)
+            left_reward = np.nansum(left_reward)
+            right_reward = np.nansum(right_reward)
+            up_reward = np.nansum(up_reward)
+            down_reward = np.nansum(down_reward)
 
             r_list = [left_reward, right_reward, up_reward, down_reward]
             print(r_list)
-            move = np.nanargmax(r_list)
-
-            # max_reward = left_reward
-            # move = 0
-            # if right_reward > max_reward:
-            #     move = 1
-            #     max_reward = right_reward
-            # if up_reward > max_reward:
-            #     move = 2
-            #     max_reward = up_reward
-            # if down_reward > max_reward:
-            #     move = 3
-            #     max_reward = down_reward
-            # print(left_reward, right_reward, up_reward, down_reward)
-
-            _, _, done, _ = env.step(move)
-            env.render()
+            if np.nanmax(r_list) > 0:
+                move = np.nanargmax(r_list)
+                _, _, done, _ = env.step(move)
+                env.render()
+            else:
+                done = True
+            if done == True:
+                breakpoint()
             
         # If no valid moves, then done
         else:
             done = True
-
+    env.render()
 if __name__ == '__main__':
     main()
 # game_board = [[2, 0, 0, 0],

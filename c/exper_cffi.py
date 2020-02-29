@@ -9,6 +9,7 @@ ffibuilder.cdef("""
     uint8_t *move_down(uint8_t *game_board);
     uint8_t *move_left(uint8_t *game_board);
     uint8_t *move_right(uint8_t *game_board);
+    uint32_t get_time(void);
 """)
 
 # set_source() gives the name of the python extension module to

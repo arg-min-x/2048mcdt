@@ -25,6 +25,8 @@
 //          Game Board Manipulation
 // ========================================================================================
 
+uint32_t get_time(void);
+
 // Print the game board
 void print_game_board(uint8_t *game_board);
 
@@ -36,6 +38,7 @@ uint8_t *move_left(uint8_t *game_board);
 
 // Move the game board right and return pointer to the new board
 uint8_t *move_right(uint8_t *game_board);
+uint32_t *move_right32(uint32_t *game_bard);
 
 // Move the game board up and return pointer to the new board
 uint8_t *move_up(uint8_t *game_board);
@@ -47,7 +50,7 @@ uint8_t *move_down(uint8_t *game_board);
 uint8_t count_zeros(uint8_t *game_board);
 
 // adds a 2 or 4 to the board in a random location
-uint8_t *add_random_number(uint8_t *game_board);
+uint8_t *add_random_number(uint8_t *game_board, int seed);
 
 // Create a board with two or four added at a zero locations
 uint8_t *create_random_board(uint8_t *game_board, int *last_zero_ind, uint8_t rand_value);

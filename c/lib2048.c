@@ -82,6 +82,58 @@ uint8_t *move_right(uint8_t *game_board){
 }
 
 // ========================================================================================
+// Move Right
+uint32_t *move_right32(uint32_t *game_board){
+    
+    // Allocate the new board and copy the old board into it
+    uint32_t *move_board = malloc(16*sizeof(uint32_t));
+    for (int ind = 0; ind<16; ind++) {
+        move_board[ind] = game_board[ind];
+    }
+    
+    for (int repeat = 0; repeat < 3; repeat++) {
+        // Shift out zeros
+        for (int offset = 0; offset<13; offset +=4) {
+            for (int ind = 3; ind >0; ind--) {
+                
+                // If The current value is zero
+                if (move_board[ind+offset] == 0) {
+                    // shift value
+                    move_board[ind+offset] = move_board[ind+offset-1];
+                    move_board[ind-1+offset] = 0;
+                }
+            }
+        }
+    }
+    
+    // Combine like blocks and shift
+    for (int offset = 0; offset<13; offset +=4) {
+        for (int ind = 3; ind >0; ind--) {
+            
+            // if the two adjecent values are equal
+            if (move_board[ind+offset] == move_board[ind-1+offset] && move_board[ind+offset]>0) {
+                move_board[ind+offset] = move_board[ind+offset] * 2;
+                move_board[ind-1+offset] = 0;
+            }
+        }
+    }
+
+    // Shift out zeros
+    for (int offset = 0; offset<13; offset +=4) {
+        for (int ind = 3; ind >0; ind--) {
+            
+            // If The current value is zero
+            if (move_board[ind+offset] == 0) {
+                // shift value
+                move_board[ind+offset] = move_board[ind+offset-1];
+                move_board[ind-1+offset] = 0;
+            }
+        }
+    }
+    return move_board;
+}
+
+// ========================================================================================
 // Move the Game Board left
 uint8_t *move_left(uint8_t *game_board){
     
@@ -284,8 +336,9 @@ uint8_t *create_random_board(uint8_t *game_board, int *last_zero_ind, uint8_t ra
 
 // ========================================================================================
 // adds a 2 or 4 to the board in a random location
-uint8_t *add_random_number(uint8_t *game_board){
-    int num_zeros, ind_z, rand_ind, rand_num;
+uint8_t *add_random_number(uint8_t *game_board, int seed){
+    srand(seed);
+    int num_zeros, ind_z, rand_ind, rand_n, rand_num;
 	ind_z = 0;
 	num_zeros = count_zeros(game_board);
 	int *zero_inds;
@@ -299,12 +352,13 @@ uint8_t *add_random_number(uint8_t *game_board){
 	}
 	
 	rand_ind = rand() % num_zeros + 0;
-	rand_num = rand() % 100 + 1;
-	if (rand_num <11){
+	rand_n = rand() % 100;
+	if (rand_n < 11){
 		rand_num = 2;
 	}else{
 		rand_num = 1;
 	}
+    // printf("zero_ind %d, rand_n %d, rand_num %d\n", rand_ind, rand_n, rand_num);
 
 	game_board[zero_inds[rand_ind]] = rand_num;
 	//printf("\n rand ind %d  zero ind %d rand num %d\n",rand_ind, zero_inds[rand_ind], rand_num);
@@ -323,6 +377,7 @@ void roll_out(uint8_t *game_board, int seed) {
     srand(seed);
 	uint8_t *tmp_board;
 	int rand_num = 0;
+    int move_seed = 0;
 	int keep_moving = 1;
 	int num_moves = 0;
 
@@ -339,6 +394,8 @@ void roll_out(uint8_t *game_board, int seed) {
 	while (keep_moving>0){
 		// Choose a random move
 		rand_num = rand() % 4 + 1;
+        move_seed = rand() % 10000;
+        // printf("rand num %d \n", rand_num);
 		char next_move = 'a';
 		char up, down, left, right;
 		up = 'u';
@@ -358,7 +415,7 @@ void roll_out(uint8_t *game_board, int seed) {
 		tmp_board = move_up(move_board);
 		if (next_move==up && !compare_board(tmp_board,move_board)){
 			move_board = move_up(move_board);
-			move_board = add_random_number(move_board);
+			move_board = add_random_number(move_board, move_seed);
 			// print_game_board(move_board);
 			// printf("\n");
 			num_moves++;
@@ -366,7 +423,7 @@ void roll_out(uint8_t *game_board, int seed) {
 		tmp_board = move_down(move_board);
 		if(next_move==down && !compare_board(tmp_board,move_board)){
 			move_board = move_down(move_board);
-			move_board = add_random_number(move_board);
+			move_board = add_random_number(move_board, move_seed);
 			// print_game_board(move_board);
 			// printf("\n");
 			num_moves++;
@@ -374,7 +431,7 @@ void roll_out(uint8_t *game_board, int seed) {
 		tmp_board = move_left(move_board);
 		if(next_move==left && !compare_board(tmp_board,move_board)){
 			move_board = move_left(move_board);
-			move_board = add_random_number(move_board);
+			move_board = add_random_number(move_board, move_seed);
 			// print_game_board(move_board);
 			// printf("\n");
 			num_moves++;
@@ -382,7 +439,7 @@ void roll_out(uint8_t *game_board, int seed) {
 		tmp_board = move_right(move_board);
 		if(next_move==right && !compare_board(tmp_board,move_board)){
 			move_board = move_right(move_board);
-			move_board = add_random_number(move_board);
+			move_board = add_random_number(move_board, move_seed);
 			// print_game_board(move_board);
 			// printf("\n");
 			num_moves++;
@@ -409,4 +466,15 @@ void roll_out(uint8_t *game_board, int seed) {
 	// print_game_board(game_board);
 	}
     free(move_board);
+}
+
+uint32_t get_time(void){
+    uint32_t c_time = time(0);
+    printf("%d\n", c_time);
+    srand(c_time);
+    for (int ind = 0;ind<16;ind++){
+		printf("%d", rand() % 100);
+	}
+    printf("\n");
+    return c_time;
 }
